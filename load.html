@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+    <style>
+        ul,li{
+            margin:0; padding:0px;
+        }
+       ul li{
+            list-style:none;
+            float:left;
+            padding:10px;
+        }
+        .ulLI{
+            background:#ffffff;
+            border:solid 1px red;
+            border-bottom:0;
+            position:relative;
+             z-index:1;
+        }
+       #box1{
+            clear:both;
+            min-width:100px;
+            min-height:50px;
+            border:solid 1px red;
+            position:relative;
+            top:-1px;
+        }
+    </style>
+</head>
+<body>
+    <ul>
+        <li class="ulLI">加载另一个页面标题内容</li>
+        <li>加载另一个页面一部分内容</li>
+        <li>加载另一个页面全部分内容</li>
+    </ul>
+   <div id="box1">
+
+   </div>
+
+    <div id="clickme" style="background:red;width:100px;">
+        Click here
+    </div>
+    <div id="box2">
+        点击我box2
+    </div>
+
+    <div id="box3">
+        点击我 点击我 点击我
+    </div>
+    <div id="box4">
+        我隐藏，我显示
+    </div>
+    <script src="http://apps.bdimg.com/libs/jquery/1.11.1/jquery.js"></script>
+    <script>
+        $("#box1").load("ajax1.html h1");
+        $("ul li").each(function (index, value) {
+            $(value).click(function(){
+                $("li.ulLI").removeClass('ulLI');
+                $(this).addClass("ulLI");
+
+                if (index == 0) {
+                    alert(index)
+                    $("#box1").load("ajax1.html h1");
+
+                } else if (index == 1) {alert(index)
+                    $("#box1").load("ajax1.html #box");
+
+                } else {
+                    $("#box1").load("ajax1.html");
+                }
+            })
+        })
+
+
+        $("#box2").click(function () {
+            $("#clickme").animate({
+                opacity: 0.25,
+                left: "+=150",
+                height: "toggle"
+            }, 5000, function () {
+                // Animation complete.
+            });
+        });
+        $('#box3').click(function () { $('#box4').toggle(1000, function () { alert(3) }) })
+    </script>
+</body>
+</html>

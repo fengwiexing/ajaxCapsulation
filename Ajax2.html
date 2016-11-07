@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+    <style>
+      
+        .buttons{
+            border:none;
+            background:#999;
+        }  
+        .seleted{
+            background:red;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" onchange="hits(this.value)" />
+    <div id="retList">显示信息：</div><br />
+
+    <button onclick="test('我是GET请求不传参')">我是GET请求不传参</button><br/><br />
+
+
+    <button onclick="hit('11')">111</button>
+    <button onclick="hit('22')">222</button>
+    <button onclick="hit('33')">333</button>
+    <div id="box"></div>
+
+   
+    <br /><br />
+     <form>
+        帐号： <input type="number" name="account" onchange="submits()"  />
+        身份证号： <input type="number" name="idcard" onchange="submits()"  />
+        邮箱： <input type="email" name="email" />
+        电话： <input type="tel" name="tel"  />
+     </form>
+
+
+    <br /><br />
+    <button class="buttons" onclick="hit2('11')">11</button>
+    <button class="buttons" onclick="hit2('22')">22</button>
+    <button class="buttons" onclick="hit2('33')">33</button>
+    <div id="box2"></div>
+
+    <script src="ajaxCapsulation.js"></script>
+    <script>
+        function hits(keyword) {
+          ajax().before(function () {
+                alert("正在加载...");
+          }).post('/abc.ashx', { keyword: keyword }, 'json')
+            .success(successHandler)
+            .success(function (data) { alert(data) })
+            .error(errorHandler)
+            .always(function (status, resText, xhr) {
+                console.log('status:%s,text:%s', status, resText);
+            });
+        }
+
+        function errorHandler(status, resText, xhr) {
+            console.log('status:%s,text:%s', status, resText);
+        }
+        function successHandler(ret) {
+
+            var eleRetList = document.getElementById('retList');
+
+            if (ret.length === 0) {
+                eleRetList.innerHTML = 'on result';
+
+            } else {
+                //var domStr = '';
+                //for (var i = 0, len = ret.length; i < len; i++) {
+                //    domStr += '<p>' + ret[i] + '</p>';
+                //}
+                eleRetList.innerHTML = ret;
+            }
+        }
+
+
+
+        function test(data) {
+            ajax().get('/abc.ashx', {"keyword": data }).success(function (ret) {
+                alert(ret);
+            })
+        }
+
+
+
+//因为网络的有快慢有可能后一次请求的数据在页面有可能被前一次请求的内容覆盖，所以下面是方法是，当多次请求时只允许后一次请求有效
+        //function hit(keyword) {
+        //    ajax().get('/keyword/hit2', { keyword: keyword })
+        //    .success(function (e) {
+        //         document.getElementById('box').innerHTML = e;
+        //    })
+        //}
+        (function (window) {
+            var xhr;
+            window.hit = function (keyword) {
+              
+                if (xhr) {//如果上一次请求存在
+                    xhr.abort();//中上一次请求
+                }
+                
+                xhr = ajax().before(function (xhr) {
+                    //ajax被中止时触发也就是 xhr.abort();会调用时
+                    xhr.onabort = function () {
+                        alert('上一次请求被中止');
+                    }
+                }).get('/abc.ashx', { keyword: keyword })
+                .success(function (data) {
+                    document.getElementById('box').innerHTML = data;
+                })
+            }
+        })(window)
+
+
+        //并行执行，通过计数器判断是否异步请求都执行结束，也就是所有异步请求都执行
+        function submits() {
+            var form = document.forms[0];//找到第一个表单
+            var errors = [];
+  
+            //先执行同步的验证
+            if (!form.tel.value) { //找到表单对应的name='tel'的元素是否为空
+                errors.push('empty tel')
+            }
+            if (!form.email.value) {
+                errors.push('empty email');
+            }
+            
+            var asyncNum = 2;//总的异步请求数
+            var asyncCnt = 0;//当前已完成的请求数
+
+            //计数用的回调
+            function cnt() {
+                asyncCnt++;
+                if (asyncCnt == asyncNum) {
+                    errors.length ? showErrors(errors) : form.submit();
+                }
+            }
+
+            ajax().get("/abc.ashx", { keyword: form.account.value })
+            .success(function (exists) {
+                if (exists) {
+                    errors.push(exists);
+                }
+            })
+            .success(cnt)
+            .error(function (error) {
+                errors.push(exists);
+                cnt();
+            });
+
+
+            ajax().get('/abc.ashx', { keyword: form.idcard.value })
+            .success(function (exists) {
+                errors.push(exists);
+            })
+            .success(cnt)
+              .error(function (error) {
+                  errors.push(exists);
+                  cnt();
+              });
+        }
+
+        function showErrors(errors) { alert(errors) };
+
+
+
+
+
+
+        //改变location的锚点，能让浏览器的上一页，下一页，能够跳转到上一次或下一次异步请求的页面
+        function hit2(keyword) {
+            location.hash = keyword;
+        }
+
+        (function (window) {
+            var xhr;
+        
+            //将window.hit2改为var hit2，将hit2变为闭包内成员，覆盖全局hit2定义
+            var hit3 = function (keyword) {
+                if (xhr) {//如果上一次请求还没有结束就中止
+                    xhr.abort();
+                }
+                xhr = ajax().get("/abc.ashx", { keyword: keyword }).success(function (ret) {
+                    document.getElementById("box2").innerHTML = ret;
+                });
+            };
+            //绑定事件监听onhashchange事件 是当锚点变化时触发，window.onload 事件是保证在网页刷新时还是保持当前的页面
+            window.onload = window.onhashchange = function () {
+                //事件发生后由事件触发加载动作，参数为hash值
+                var hash = window.location.hash;
+                if (hash) {
+                    hash = hash.substr(1);
+                }
+                //ajax
+                hit3(hash);
+                //按钮状态
+                btnstate(hash);
+            }
+
+        })(window);
+
+        function btnstate(hash) {
+            var divBtns = document.getElementsByClassName('buttons');
+            for (var i = 0, len = divBtns.length; i < len; i++) {
+                var btn = divBtns[i];
+                btn.className = (btn.innerText == hash) ? 'buttons seleted' : "buttons";
+            }
+        }
+    </script>
+</body>
+</html>

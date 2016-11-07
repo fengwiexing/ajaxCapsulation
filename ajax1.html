@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+</head>
+<body>
+    <!--AJAX
+    Asynchronous   浏览器支持异步通信模式，实现页面局部刷新
+    Javascript      使用的编程语言
+    And 
+    XML            通信数据的承载方式，但实际很少使用XML格式，因为xml是重量级方式用JS语言操作也不太方便，现在一般采用json方式
+    XMLHttpRequest 有level1和level2两个版本，现代浏览器支持xhr level2
+        xhr level2兼容xhr level1并新增了 1 timeout 超时支持在发请求的时候可以指定一个超时的时间，如果请求超时就自动断开请求，2 CORS跨域支持， 3  upload 二进制文件上传支持    -->
+    <h1>输入要搜索的课程名称</h1>
+    <div id="box">
+        <div id="searchbox">
+            <input typt="text" id="keyword" />
+            <ul id="hits" style="display:none">
+
+            </ul>
+        </div>
+        <button id="searchbtn">搜索</button>
+    </div>
+    <script>
+        //通过AJAX获取命中提示内容
+        document.getElementById('keyword').onchange = function () {
+            var keyword = this.value;
+
+            //典型的AJAX编程模板
+            //1，创建XMLHttpReqeust对象
+            var xhr;
+            if (window.XMLHttpRequest) {
+
+                xhr = new XMLHttpRequest();
+
+            } else if (window.ActiveXObject) {
+
+                var aVersions = ["Microsoft.XMLHttp", "MSXML2.XMLHttp.5.0", "MSXML2.XMLHttp.4.0", "MSXML2.XMLHttp.3.0", "MSXML2.XMLHttp"];
+
+                    for(var i=0;i<aVersions.length;i++)
+                    {
+                        try
+                        {
+                            xhr = new ActiveXObject(aVersions[i]);
+                            return;
+                        }
+                        catch(oError){ }
+                    }
+            } else { return xhr = null; }
+
+            //2,open操作初始化请求信息
+            xhr.open("GET", "keyword.js?keyword=33" , true);//encodeURIComponent(keyword)
+
+
+            //3,监听事件处理响应结果
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    handleResult(xhr.responseText);
+                    //xhr.responseText获取响应的数据，如果请求头设置的不是XML格式就可能用这个属性
+                    //xhr.responseXML获取响应的数据，如果请求头设置的是XML格式就用这个属性
+                    //xhr.getAllResponseHeaders()获取所有的响应头;
+                   xhr.getResponseHeader("Content-Type")//获取某个响应头
+                }
+            }
+            //onload事件 仅xhr level 2支持 onload事件在xhr.readyState == 4时候触发；建议用xhr.onreadystatechange事件
+
+            //xhr.onload = function () {
+            //    if (xhr.status == 200) {
+            //        handleResult(xhr.responseText);
+            //    }
+            //}
+
+
+
+            //设置请求头内内容类型
+            xhr.setRequestHeader("Content-Type", "application/json");//application/json表明发送给服务器的格式是JSON格式的
+            xhr.setRequestHeader("test", "ssssValue")//自定义请求头，可以多次调用这个方法，设置多个请求头
+
+            //4, send操作发出请求
+            xhr.send();//如果发起的是POST请求可以用这个写法传数据，xhr.send("a=2&b=4&c=ff&..."); 也可以用urlencoded的方式组织 a=2&b=4&c=ff&...
+            //如果 xhr.setRequestHeader指定了JSON格式， 就可用json方式发送数据  xhr.send( JSON.stringify({a:4,b:"aa",c:true.....}));
+           
+            //设置请求的超时时间；
+            xhr.timeout = 5000;//以毫秒为单位
+            xhr.ontimeout = function () {
+                console.log("连接超时");
+            }
+        }
+
+        //处理响应的结果
+        function handleResult(ret) {
+            //如果返回的是JSON字符串就用 JSON.parse(ret);或eval(ret)
+           var data=ret.match(/ 'Javascript高级编程', 'Java Web开发', 'Express框架指南/g)
+            console.log(ret)
+         //   ret = JSON.parse(ret);
+            var domHits = document.getElementById("hits");
+            if (data.length) {
+                var lis = [];
+                for (var i = 0, ret = data.length; i < ret; i++) {
+                    lis.push("<li>" + data[i] + "</li>");
+                }
+                domHits.innerHTML = lis.join("");
+                domHits.style.display = 'block';
+            } else {
+                domHits.innerHTML = "";
+                domHits.style.display = 'none';
+            }
+        }
+
+
+    </script>
+</body>
+</html>
